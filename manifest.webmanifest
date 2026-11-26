@@ -1,0 +1,26 @@
+{
+  "name": "双曲平面 ℍ² 対話実験室",
+  "short_name": "双曲平面 ℍ²",
+  "description": "ポアンカレ円板モデル ℍ² 上の測地線・三角形面積 (ガウス–ボネの定理)・等長変換 Isom₊(ℍ²) を高精度演算で実演・検証する数学ツール",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

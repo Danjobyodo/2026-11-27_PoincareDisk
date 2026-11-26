@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a" id="meta-theme-color">
+  <meta name="description" content="双曲平面 (ポアンカレ円板モデル ℍ²) の距離・測地線・三角形面積 (ガウス–ボネの定理)・等長変換 Isom₊(ℍ²) を106bit高精度演算で実演・検証するオフライン対応PWA">
+
+  <!-- iOS Safari PWA tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="双曲平面 ℍ²">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./css/style.css">
+  <title>双曲平面 ℍ² 対話実験室</title>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-title">双曲平面 <span class="math-rm">ℍ²</span></span>
+        <span class="brand-math">{ z ∈ ℂ : |z| &lt; 1 }</span>
+      </div>
+
+      <nav class="mode-tabs" role="tablist" aria-label="機能モード">
+        <button class="mode-tab active" data-mode="triangle" role="tab" aria-selected="true">三角形・面積</button>
+        <button class="mode-tab" data-mode="points" role="tab" aria-selected="false">点・測地線・円</button>
+        <button class="mode-tab" data-mode="isometry" role="tab" aria-selected="false">等長変換 Isom₊</button>
+        <button class="mode-tab" data-mode="theorems" role="tab" aria-selected="false">定理検証ラボ</button>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-formulas" title="定義・公式と数値精度の解説" aria-label="定義・公式">
+          <span class="math">f</span><span>公式</span>
+        </button>
+        <button class="icon-btn" id="btn-theme" title="ライト/ダーク切替" aria-label="テーマ切替">☀︎</button>
+        <span class="icon-btn" id="pwa-status" title="オフライン動作状態" style="cursor:default; display:none;">
+          <span class="pwa-dot"></span><span>Offline可</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Interactive Poincaré Disk Canvas -->
+      <section class="canvas-pane" aria-label="ポアンカレ円板モデル">
+        <canvas id="disk-canvas"></canvas>
+
+        <!-- Top-left HUD: Zoom controls -->
+        <div class="canvas-hud hud-tl">
+          <div class="hud-group">
+            <button class="hud-btn" id="btn-zoom-out" title="縮小">−</button>
+            <span class="hud-btn" id="zoom-label" style="cursor:default; min-width:46px; text-align:center;">1.0×</span>
+            <button class="hud-btn" id="btn-zoom-in" title="拡大 (境界付近の確認に便利)">＋</button>
+            <button class="hud-btn" id="btn-zoom-reset" title="全体表示に戻す">全体</button>
+          </div>
+        </div>
+
+        <!-- Top-right HUD: Layer toggles -->
+        <div class="canvas-hud hud-tr">
+          <div class="hud-group">
+            <button class="hud-btn active" id="toggle-grid" title="双曲同心円と座標軸">格子</button>
+            <button class="hud-btn" id="toggle-tiling" title="直角正五角形 {5,4} タイリング">{5,4}</button>
+            <button class="hud-btn" id="toggle-full-geo" title="測地線を境界 ∂ℍ² まで延長">延長</button>
+          </div>
+        </div>
+
+        <!-- Bottom-left HUD: Quick point actions -->
+        <div class="canvas-hud hud-bl">
+          <div class="hud-group">
+            <button class="hud-btn" id="btn-add-coord" title="座標を指定して点を追加">＋座標追加</button>
+            <button class="hud-btn danger" id="btn-del-pt" title="選択中の点を削除">削除</button>
+            <button class="hud-btn danger" id="btn-clear-pts" title="すべての点を消去">全消去</button>
+          </div>
+        </div>
+
+        <!-- Bottom-right HUD: Live cursor coordinate readout -->
+        <div class="canvas-hud hud-br">
+          <div class="hud-readout" id="cursor-readout">円板内をタップして点を配置 / ドラッグで移動</div>
+        </div>
+      </section>
+
+      <!-- Right / Bottom Inspector Panel -->
+      <aside class="inspector-pane" aria-label="解析・操作パネル">
+        <div class="inspector-scroll" id="inspector-content">
+          <!-- Dynamically populated by js/app.js -->
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Formula & Numerical Precision Reference Modal -->
+  <div class="modal-backdrop" id="formula-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="formula-modal-title">
+      <div class="card-header">
+        <h2 id="formula-modal-title">定義・記号と高精度計算の仕組み</h2>
+        <button class="icon-btn" id="btn-close-formula" aria-label="閉じる">✕</button>
+      </div>
+      <div class="formula-list">
+        <div class="formula-entry">
+          <div class="formula-entry-title">ポアンカレ円板モデル (定ガウス曲率 K = −1)</div>
+          <div class="formula-entry-math">ℍ² = { z ∈ ℂ : |z| &lt; 1 }, &nbsp; ds = 2|dz| / (1 − |z|²)</div>
+        </div>
+        <div class="formula-entry">
+          <div class="formula-entry-title">双曲距離</div>
+          <div class="formula-entry-math">
+            d(z, w) = log( (1 + |(z − w)/(1 − z̄w)|) / (1 − |(z − w)/(1 − z̄w)|) )<br>
+            <span class="muted">※ 数値計算では桁落ちのない恒等式 d(z,w) = 2·arsinh(|z−w| / √((1−|z|²)(1−|w|²))) を106bit倍々精度 (Double-Double) で評価しています。</span>
+          </div>
+        </div>
+        <div class="formula-entry">
+          <div class="formula-entry-title">向きを保つ等長変換群</div>
+          <div class="formula-entry-math">
+            Isom₊(ℍ²) = { φ<sub>θ,α</sub> : θ ∈ [0, 2π), α ∈ ℍ² }<br>
+            φ<sub>θ,α</sub>(z) = e<sup>iθ</sup> · (z − α) / (1 − ᾱz)
+          </div>
+        </div>
+        <div class="formula-entry">
+          <div class="formula-entry-title">双曲面積とガウス–ボネの定理</div>
+          <div class="formula-entry-math">
+            Area(B) = ∬<sub>B</sub> 4 / (1 − |z|²)² dx dy<br>
+            測地線三角形 T の内角を α, β, γ とすると Area(T) = π − (α + β + γ)
+          </div>
+        </div>
+        <div class="formula-entry">
+          <div class="formula-entry-title">境界 |z| → 1 近傍での精度保証と非表示ガード</div>
+          <div class="formula-entry-math" style="font-family:var(--font-sans); font-size:12.5px;">
+            通常のIEEE-754倍精度 (約16桁) では 1 − |z| &lt; 10<sup>−8</sup> 付近で桁落ちや発散が生じます。本アプリでは全幾何演算を <strong>106bit 倍々精度 (約31桁)</strong> で実装し、さらに面積数値積分ではグリーンの定理に基づく測地線弧長パラメータの適応ガウス・ルジャンドル求積（被積分関数が境界近傍でも常に有界 |f| &lt; 1）を用いることで、<strong>1 − |z| = 10<sup>−12</sup> 領域でも15桁以上の精度</strong>を実現しています。<br>
+            信頼できる有効数字が7桁未満になる極端な領域 (1 − |z|² &lt; 10<sup>−23</sup>) では、誤った数値を出さず非表示とします。
+          </div>
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content:flex-end;">
+        <button class="btn btn-primary" id="btn-close-formula-bottom">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Point by Exact Coordinate Modal -->
+  <div class="modal-backdrop" id="add-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+      <div class="card-header">
+        <h2 id="add-modal-title">座標を指定して点を追加</h2>
+        <button class="icon-btn" id="btn-close-add" aria-label="閉じる">✕</button>
+      </div>
+      <div class="sub-tabs" id="add-coord-tabs">
+        <button class="sub-tab active" data-ctype="cart">直交 (x, y)</button>
+        <button class="sub-tab" data-ctype="polar">極座標 (r, θ°)</button>
+        <button class="sub-tab" data-ctype="boundary">境界距離 (1−δ, θ°)</button>
+        <button class="sub-tab" data-ctype="hyp">双曲距離 (ρ, θ°)</button>
+      </div>
+      <div class="input-row">
+        <div class="field">
+          <label id="add-lbl-1">実部 x (例: 0.5, 0.99999999)</label>
+          <input type="text" id="add-inp-1" value="0.5" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="field">
+          <label id="add-lbl-2">虚部 y (例: 0.3)</label>
+          <input type="text" id="add-inp-2" value="0.3" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+      <p id="add-error" style="color:var(--rose); min-height:18px; margin-bottom:10px;"></p>
+      <div class="btn-row" style="justify-content:flex-end;">
+        <button class="btn" id="btn-cancel-add">キャンセル</button>
+        <button class="btn btn-primary" id="btn-confirm-add">点を追加</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/dd.js" defer></script>
+  <script src="./js/hyperbolic.js" defer></script>
+  <script src="./js/theorems.js" defer></script>
+  <script src="./js/renderer.js" defer></script>
+  <script src="./js/app.js" defer></script>
+</body>
+</html>
